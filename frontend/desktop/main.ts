@@ -1,4 +1,4 @@
-import { app, dialog, ipcMain, shell, type BrowserWindow } from "electron";
+import { app, dialog, ipcMain, shell, Menu, type BrowserWindow } from "electron";
 import type { DesktopAppState } from "./types";
 import { log } from "./helpers/logger";
 import { isHttpUrl } from "./helpers/url";
@@ -13,6 +13,9 @@ let mainWindow: BrowserWindow | null = null;
 let frontendServer: ServerHandle | undefined;
 
 async function bootstrap(): Promise<void> {
+  // Disable default menu
+  Menu.setApplicationMenu(null);
+
   if (!frontendServer) {
     frontendServer = await startFrontendServer();
     registerNavigationPolicy(new URL(frontendServer.runtime.url).origin);

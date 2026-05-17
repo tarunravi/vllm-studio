@@ -44,6 +44,12 @@ node_modules/
 .next/
 .turbo/
 bun.lock
+.npm-cache/
+**/ .npm-cache/
+**/node_modules/
+**/dist/
+**/dist-desktop/
+**/desktop/dist/
 
 # IDE
 .idea/

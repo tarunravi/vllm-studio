@@ -13,6 +13,8 @@ export function createMainWindow(appUrl: string): BrowserWindow {
     show: false,
     title: DESKTOP_CONFIG.appName,
     autoHideMenuBar: true,
+    titleBarStyle: "hidden",
+    trafficLightPosition: { x: 12, y: 16 },
     webPreferences: {
       preload: path.join(__dirname, "../preload.js"),
       contextIsolation: true,

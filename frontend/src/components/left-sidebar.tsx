@@ -108,130 +108,131 @@ export function LeftSidebar({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex h-full min-h-0 w-full overflow-hidden">
-      {!isExpanded ? (
-        <button
-          onClick={() => setDesktopSidebarPinnedOpen(true)}
-          className="fixed left-3 top-3 z-50 hidden h-8 w-8 items-center justify-center rounded-md bg-(--bg)/70 text-(--dim) transition-colors hover:bg-(--surface) hover:text-(--fg) md:flex"
-          title="Expand sidebar"
-          aria-label="Expand sidebar"
-        >
-          <PanelLeftOpen className="h-5 w-5" />
-        </button>
-      ) : null}
-      <aside
-        className={`hidden md:flex sticky top-0 h-[100dvh] transition-[width] duration-150 ease-out border-r border-(--border) bg-(--rail) flex-col shrink-0 z-40 overflow-hidden ${
-          isExpanded ? "w-[var(--sidebar-w)]" : "w-0 border-r-0"
-        }`}
-        aria-hidden={!isExpanded}
-      >
-        {isExpanded ? (
-          <>
-            {/* Header with window controls + nav arrows */}
-            <div className="sticky top-0 z-50 flex h-12 shrink-0 items-center justify-between px-4 bg-(--rail)">
-              <button
-                onClick={() => setDesktopSidebarPinnedOpen(false)}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-(--dim) transition-colors hover:bg-(--hover) hover:text-(--fg)"
-                title="Collapse sidebar"
-                aria-label="Collapse sidebar"
-              >
-                <Square className="h-3.5 w-3.5" />
-              </button>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => window.history.back()}
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-(--dim) transition-colors hover:bg-(--hover) hover:text-(--fg)"
-                  title="Go back"
-                  aria-label="Go back"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => window.history.forward()}
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-(--dim) transition-colors hover:bg-(--hover) hover:text-(--fg)"
-                  title="Go forward"
-                  aria-label="Go forward"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Primary nav */}
-            <nav className="flex-1 min-h-0 flex flex-col px-2 py-1 overflow-y-auto overflow-x-hidden">
-              <button
-                type="button"
-                onClick={() => setSearchOpen(true)}
-                className="mb-1 flex h-8 items-center gap-3 rounded-md px-3 text-(--dim) transition-colors hover:bg-(--hover) hover:text-(--fg)"
-                title="Search sessions (⌘K)"
-              >
-                <SearchIcon className="h-4 w-4 shrink-0" />
-                <span className="flex-1 truncate text-left text-[14px]">Search</span>
-                <kbd className="px-1 py-0.5 text-[11px] font-mono text-(--dim)">⌘K</kbd>
-              </button>
-
-              <div className="mb-1 mt-4 px-3 text-[12px] font-medium text-(--dim)">Workspace</div>
-              {tabs.map((tab) => (
-                <NavItemDesktop
-                  key={tab.href}
-                  href={tab.href}
-                  label={tab.label}
-                  Icon={tab.icon}
-                  active={isRouteActive(pathname, tab.href)}
-                  expanded={isExpanded}
-                />
-              ))}
-              <ProjectsNavSection expanded={isExpanded} />
-            </nav>
-
-            <div className="shrink-0 px-2 py-3">
-              <NavItemDesktop
-                href="/settings"
-                label="Settings"
-                Icon={Settings}
-                active={isRouteActive(pathname, "/settings")}
-                expanded={isExpanded}
-              />
-            </div>
-          </>
-        ) : null}
-      </aside>
-
-      {/* Mobile/PWA: top app bar + hamburger drawer (no footer nav). */}
-      <div className="mobile-pwa-topbar md:hidden fixed left-0 right-0 top-0 z-40 border-b border-(--border)/70 bg-(--bg) px-4">
-        <Link href="/" className="flex min-w-0 items-center gap-2.5">
-          <span className="truncate text-[13px] font-semibold tracking-tight text-(--fg)">
-            Status
-          </span>
-        </Link>
-        <div className="flex items-center gap-2">
+    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden">
+      {/* Desktop Top Bar — integrated navigation & drag region */}
+      <div className="drag-region sticky top-0 z-50 hidden h-12 shrink-0 items-center justify-between bg-(--rail) px-4 md:flex border-b border-(--border)/50">
+        <div className="flex items-center gap-4 no-drag ml-[72px]">
           <button
-            type="button"
-            onClick={() => setMobileMenuOpen(true)}
-            className="flex !h-8 !min-h-8 !w-8 !min-w-8 items-center justify-center rounded-md border-0 bg-transparent text-(--dim) transition-colors hover:bg-(--surface) hover:text-(--fg)"
-            aria-label="Open navigation menu"
-            aria-expanded={mobileMenuOpen}
-            aria-controls="mobile-navigation-drawer"
+            onClick={() => setDesktopSidebarPinnedOpen(!isExpanded)}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-(--dim) transition-colors hover:bg-(--hover) hover:text-(--fg)"
+            title={isExpanded ? "Collapse sidebar" : "Expand sidebar"}
+            aria-label={isExpanded ? "Collapse sidebar" : "Expand sidebar"}
           >
-            <Menu className="h-[18px] w-[18px]" />
+            <Square className="h-3.5 w-3.5" />
           </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => window.history.back()}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-(--dim) transition-colors hover:bg-(--hover) hover:text-(--fg)"
+              title="Go back"
+              aria-label="Go back"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => window.history.forward()}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-(--dim) transition-colors hover:bg-(--hover) hover:text-(--fg)"
+              title="Go forward"
+              aria-label="Go forward"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
         </div>
+
+        {/* Central App Title */}
+        <div className="absolute left-1/2 -translate-x-1/2 text-[12px] font-semibold tracking-tight text-(--fg) select-none pointer-events-none">
+          vLLM Studio
+        </div>
+
+        <div className="w-20" />
       </div>
 
-      {mobileMenuOpen ? (
-        <MobileNavigationDrawer pathname={pathname} onClose={() => setMobileMenuOpen(false)} />
-      ) : null}
+      <div className="flex flex-1 min-h-0 w-full overflow-hidden">
+        <aside
+          className={`hidden md:flex sticky top-0 h-full transition-[width] duration-150 ease-out border-r border-(--border) bg-(--rail) flex-col shrink-0 z-40 overflow-hidden ${
+            isExpanded ? "w-[var(--sidebar-w)]" : "w-0 border-r-0"
+          }`}
+          aria-hidden={!isExpanded}
+        >
+          {isExpanded ? (
+            <>
+              {/* Primary nav */}
+              <nav className="flex-1 min-h-0 flex flex-col px-2 py-1 overflow-y-auto overflow-x-hidden">
+                <button
+                  type="button"
+                  onClick={() => setSearchOpen(true)}
+                  className="mb-1 flex h-8 items-center gap-3 rounded-md px-3 text-(--dim) transition-colors hover:bg-(--hover) hover:text-(--fg)"
+                  title="Search sessions (⌘K)"
+                >
+                  <SearchIcon className="h-4 w-4 shrink-0" />
+                  <span className="flex-1 truncate text-left text-[14px]">Search</span>
+                  <kbd className="px-1 py-0.5 text-[11px] font-mono text-(--dim)">⌘K</kbd>
+                </button>
 
-      <SessionsCommand
-        open={searchOpen}
-        onClose={() => setSearchOpen(false)}
-        activeSessions={activeSessions}
-      />
+                <div className="mb-1 mt-4 px-3 text-[12px] font-medium text-(--dim)">Workspace</div>
+                {tabs.map((tab) => (
+                  <NavItemDesktop
+                    key={tab.href}
+                    href={tab.href}
+                    label={tab.label}
+                    Icon={tab.icon}
+                    active={isRouteActive(pathname, tab.href)}
+                    expanded={isExpanded}
+                  />
+                ))}
+                <ProjectsNavSection expanded={isExpanded} />
+              </nav>
 
-      {/* Main content */}
-      <main className="mobile-pwa-main flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden bg-(--bg) md:pt-0">
-        {children}
-      </main>
+              <div className="shrink-0 px-2 py-3">
+                <NavItemDesktop
+                  href="/settings"
+                  label="Settings"
+                  Icon={Settings}
+                  active={isRouteActive(pathname, "/settings")}
+                  expanded={isExpanded}
+                />
+              </div>
+            </>
+          ) : null}
+        </aside>
+
+        {/* Mobile/PWA: top app bar + hamburger drawer (no footer nav). */}
+        <div className="mobile-pwa-topbar md:hidden fixed left-0 right-0 top-0 z-40 border-b border-(--border)/70 bg-(--bg) px-4">
+          <Link href="/" className="flex min-w-0 items-center gap-2.5">
+            <span className="truncate text-[13px] font-semibold tracking-tight text-(--fg)">
+              Status
+            </span>
+          </Link>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              className="flex !h-8 !min-h-8 !w-8 !min-w-8 items-center justify-center rounded-md border-0 bg-transparent text-(--dim) transition-colors hover:bg-(--surface) hover:text-(--fg)"
+              aria-label="Open navigation menu"
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-navigation-drawer"
+            >
+              <Menu className="h-[18px] w-[18px]" />
+            </button>
+          </div>
+        </div>
+
+        {mobileMenuOpen ? (
+          <MobileNavigationDrawer pathname={pathname} onClose={() => setMobileMenuOpen(false)} />
+        ) : null}
+
+        <SessionsCommand
+          open={searchOpen}
+          onClose={() => setSearchOpen(false)}
+          activeSessions={activeSessions}
+        />
+
+        {/* Main content */}
+        <main className="mobile-pwa-main flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden bg-(--bg) md:pt-0">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }
