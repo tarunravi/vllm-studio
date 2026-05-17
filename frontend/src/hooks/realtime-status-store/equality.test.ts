@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import type { GPU, LaunchProgressData, Metrics, ProcessInfo } from "@/lib/types";
 import type { LeaseInfo, RuntimeSummaryData, ServiceEntry, StatusData } from "./types";
 import {
@@ -48,30 +49,31 @@ const runtimeSummary: RuntimeSummaryData = {
 
 describe("realtime status equality", () => {
   it("compares status and nested process identity", () => {
-    expect(areStatusEqual(status, status)).toBe(true);
-    expect(areStatusEqual(status, null)).toBe(false);
-    expect(areStatusEqual(status, { ...status, process: { ...processInfo, pid: 2 } })).toBe(false);
-    expect(areStatusEqual(status, { ...status, inference_port: 8001 })).toBe(false);
+    assert.equal(areStatusEqual(status, status), true);
+    assert.equal(areStatusEqual(status, null), false);
+    assert.equal(areStatusEqual(status, { ...status, process: { ...processInfo, pid: 2 } }), false);
+    assert.equal(areStatusEqual(status, { ...status, inference_port: 8001 }), false);
   });
 
   it("compares GPU arrays using stable runtime fields", () => {
-    expect(areGpusEqual([gpu], [gpu])).toBe(true);
-    expect(areGpusEqual([gpu], [])).toBe(false);
-    expect(areGpusEqual([gpu], [{ ...gpu, memory_used: 5 }])).toBe(false);
-    expect(
+    assert.equal(areGpusEqual([gpu], [gpu]), true);
+    assert.equal(areGpusEqual([gpu], []), false);
+    assert.equal(areGpusEqual([gpu], [{ ...gpu, memory_used: 5 }]), false);
+    assert.equal(
       areGpusEqual(
         [{ ...gpu, temperature: undefined }],
         [{ ...gpu, temperature: null } as unknown as GPU],
       ),
-    ).toBe(true);
+      true,
+    );
   });
 
   it("compares metrics by exact key/value shape", () => {
     const metrics: Metrics = { requests_total: 1, tokens_total: 2 };
-    expect(areMetricsEqual(metrics, { ...metrics })).toBe(true);
-    expect(areMetricsEqual(metrics, { ...metrics, latency_avg: 10 })).toBe(false);
-    expect(areMetricsEqual(metrics, { requests_total: 2, tokens_total: 2 })).toBe(false);
-    expect(areMetricsEqual(metrics, null)).toBe(false);
+    assert.equal(areMetricsEqual(metrics, { ...metrics }), true);
+    assert.equal(areMetricsEqual(metrics, { ...metrics, latency_avg: 10 }), false);
+    assert.equal(areMetricsEqual(metrics, { requests_total: 2, tokens_total: 2 }), false);
+    assert.equal(areMetricsEqual(metrics, null), false);
   });
 
   it("compares launch, platform, service, lease, and runtime-summary snapshots", () => {
@@ -79,20 +81,21 @@ describe("realtime status equality", () => {
     const service: ServiceEntry = { id: "controller", kind: "api", status: "running" };
     const lease: LeaseInfo = { holder: "session-1", since: "now" };
 
-    expect(areLaunchProgressEqual(launch, { ...launch })).toBe(true);
-    expect(areLaunchProgressEqual(launch, { ...launch, progress: 50 })).toBe(false);
-    expect(arePlatformKindsEqual("cuda", "cuda")).toBe(true);
-    expect(arePlatformKindsEqual("cuda", "rocm")).toBe(false);
-    expect(areServicesEqual([service], [{ ...service }])).toBe(true);
-    expect(areServicesEqual([service], [{ ...service, status: "stopped" }])).toBe(false);
-    expect(areLeasesEqual(lease, { holder: "session-1", since: "later" })).toBe(true);
-    expect(areLeasesEqual(lease, { ...lease, holder: "session-2" })).toBe(false);
-    expect(areRuntimeSummariesEqual(runtimeSummary, { ...runtimeSummary })).toBe(true);
-    expect(
+    assert.equal(areLaunchProgressEqual(launch, { ...launch }), true);
+    assert.equal(areLaunchProgressEqual(launch, { ...launch, progress: 50 }), false);
+    assert.equal(arePlatformKindsEqual("cuda", "cuda"), true);
+    assert.equal(arePlatformKindsEqual("cuda", "rocm"), false);
+    assert.equal(areServicesEqual([service], [{ ...service }]), true);
+    assert.equal(areServicesEqual([service], [{ ...service, status: "stopped" }]), false);
+    assert.equal(areLeasesEqual(lease, { holder: "session-1", since: "later" }), true);
+    assert.equal(areLeasesEqual(lease, { ...lease, holder: "session-2" }), false);
+    assert.equal(areRuntimeSummariesEqual(runtimeSummary, { ...runtimeSummary }), true);
+    assert.equal(
       areRuntimeSummariesEqual(runtimeSummary, {
         ...runtimeSummary,
         gpu_monitoring: { ...runtimeSummary.gpu_monitoring, tool: null },
       }),
-    ).toBe(false);
+      false,
+    );
   });
 });

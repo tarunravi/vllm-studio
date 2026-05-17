@@ -133,6 +133,9 @@ const appendDs4ArgsToCommand = (args: string[], extraArgs: Record<string, unknow
     "status",
     "llama_bin",
     "ds4_bin",
+    "ds4_log_path",
+    "ds4_log",
+    "log_path",
   ]);
 
   for (const [key, value] of Object.entries(extraArgs)) {

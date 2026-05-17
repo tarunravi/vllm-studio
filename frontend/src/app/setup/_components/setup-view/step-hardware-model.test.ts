@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import type { StudioDiagnostics, VllmUpgradeResult } from "@/lib/types";
 import { buildHardwareSummary, buildUpgradeMessage } from "./step-hardware-model";
 
@@ -57,22 +58,24 @@ function diagnostics(overrides: Partial<StudioDiagnostics> = {}): StudioDiagnost
 
 describe("step hardware model", () => {
   it("builds loaded hardware copy from diagnostics", () => {
-    expect(buildHardwareSummary(diagnostics())).toMatchObject({
+    assert.deepEqual(buildHardwareSummary(diagnostics()), {
       cpu: "AMD EPYC · 64 cores",
       gpu: "RTX 3090",
+      memory: "128 GB total",
       runtime: "vLLM 0.20.0 detected.",
       vram: "24 GB",
     });
   });
 
   it("uses fallback copy before diagnostics and for CPU-only devices", () => {
-    expect(buildHardwareSummary(null)).toMatchObject({
+    assert.deepEqual(buildHardwareSummary(null), {
       cpu: "Unknown · 0 cores",
       gpu: "No CUDA GPU detected",
+      memory: "- total",
       runtime: "vLLM runtime not detected. Install to continue.",
       vram: "CPU only",
     });
-    expect(buildHardwareSummary(diagnostics({ gpus: [] })).vram).toBe("CPU only");
+    assert.equal(buildHardwareSummary(diagnostics({ gpus: [] })).vram, "CPU only");
   });
 
   it("formats runtime upgrade result copy and tone", () => {
@@ -84,11 +87,11 @@ describe("step hardware model", () => {
       used_command: "uv pip install",
       used_wheel: null,
     };
-    expect(buildUpgradeMessage(success)).toEqual({
+    assert.deepEqual(buildUpgradeMessage(success), {
       text: "Updated to vLLM 0.20.0",
       toneClassName: "text-(--hl2)",
     });
-    expect(buildUpgradeMessage({ ...success, success: false, error: "failed" })).toEqual({
+    assert.deepEqual(buildUpgradeMessage({ ...success, success: false, error: "failed" }), {
       text: "failed",
       toneClassName: "text-(--err)",
     });
