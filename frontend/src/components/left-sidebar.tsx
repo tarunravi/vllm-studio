@@ -108,10 +108,10 @@ export function LeftSidebar({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden">
+    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-(--bg)">
       {/* Desktop Top Bar — integrated navigation & drag region */}
-      <div className="drag-region sticky top-0 z-50 hidden h-12 shrink-0 items-center justify-between bg-(--rail) px-4 md:flex border-b border-(--border)/50">
-        <div className="flex items-center gap-4 no-drag ml-[72px]">
+      <div className="drag-region hidden h-12 shrink-0 items-center justify-between border-b border-(--border)/50 bg-(--rail) px-4 md:flex">
+        <div className="no-drag ml-[72px] flex items-center gap-4">
           <button
             onClick={() => setDesktopSidebarPinnedOpen(!isExpanded)}
             className="flex h-7 w-7 items-center justify-center rounded-md text-(--dim) transition-colors hover:bg-(--hover) hover:text-(--fg)"
@@ -139,11 +139,10 @@ export function LeftSidebar({ children }: { children: React.ReactNode }) {
             </button>
           </div>
         </div>
-
         <div className="w-20" />
       </div>
 
-      <div className="flex flex-1 min-h-0 w-full overflow-hidden">
+      <div className="no-drag flex flex-1 min-h-0 w-full overflow-hidden">
         <aside
           className={`hidden md:flex sticky top-0 h-full transition-[width] duration-150 ease-out border-r border-(--border) bg-(--rail) flex-col shrink-0 z-40 overflow-hidden ${
             isExpanded ? "w-[var(--sidebar-w)]" : "w-0 border-r-0"
@@ -192,8 +191,14 @@ export function LeftSidebar({ children }: { children: React.ReactNode }) {
           ) : null}
         </aside>
 
+        <SessionsCommand
+          open={searchOpen}
+          onClose={() => setSearchOpen(false)}
+          activeSessions={activeSessions}
+        />
+
         {/* Mobile/PWA: top app bar + hamburger drawer (no footer nav). */}
-        <div className="mobile-pwa-topbar md:hidden fixed left-0 right-0 top-0 z-40 border-b border-(--border)/70 bg-(--bg) px-4">
+        <div className="mobile-pwa-topbar fixed left-0 right-0 top-0 z-40 border-b border-(--border)/70 bg-(--bg) px-4 md:hidden">
           <Link href="/" className="flex min-w-0 items-center gap-2.5">
             <span className="truncate text-[13px] font-semibold tracking-tight text-(--fg)">
               Status
@@ -216,12 +221,6 @@ export function LeftSidebar({ children }: { children: React.ReactNode }) {
         {mobileMenuOpen ? (
           <MobileNavigationDrawer pathname={pathname} onClose={() => setMobileMenuOpen(false)} />
         ) : null}
-
-        <SessionsCommand
-          open={searchOpen}
-          onClose={() => setSearchOpen(false)}
-          activeSessions={activeSessions}
-        />
 
         {/* Main content */}
         <main className="mobile-pwa-main flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden bg-(--bg) md:pt-0">

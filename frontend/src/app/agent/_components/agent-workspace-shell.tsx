@@ -97,7 +97,7 @@ export function AgentWorkspaceShell({ state, dispatch, handles }: AgentWorkspace
     );
 
   return (
-    <div className="agent-workspace flex h-full min-h-0 w-full flex-col bg-(--bg) text-(--fg) md:h-[100dvh]">
+    <div className="agent-workspace flex h-full min-h-0 w-full flex-col bg-(--bg) text-(--fg)">
       <div className="flex min-h-0 flex-1">
         <section className="relative flex min-w-0 flex-1 flex-col">
           <WorkspaceTopBar
