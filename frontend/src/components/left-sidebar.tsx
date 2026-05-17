@@ -140,11 +140,6 @@ export function LeftSidebar({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        {/* Central App Title */}
-        <div className="absolute left-1/2 -translate-x-1/2 text-[12px] font-semibold tracking-tight text-(--fg) select-none pointer-events-none">
-          vLLM Studio
-        </div>
-
         <div className="w-20" />
       </div>
 
