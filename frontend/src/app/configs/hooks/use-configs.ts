@@ -107,7 +107,14 @@ export function useConfigs() {
         setStatusMessage("Missing API URL");
         return;
       }
-      const res = await fetch(`${baseUrl.replace(/\/+$/, "")}/status`);
+      const apiKey = apiSettings.apiKey?.trim();
+      const savedApiKey = getApiKey();
+      const authToken = apiKey && !apiKey.includes("••••") ? apiKey : savedApiKey;
+      const headers: HeadersInit = {};
+      if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+      }
+      const res = await fetch(`${baseUrl.replace(/\/+$/, "")}/status`, { headers });
       if (res.ok) {
         setConnectionStatus("connected");
         setStatusMessage("Connected");
