@@ -38,7 +38,7 @@ const getVllmPythonPath = (recipe: Recipe): string | undefined => { return resol
  * @param command - Command array. * @param extraArguments - Extra args object.
  * @param extraArguments
  * @returns Updated command array. */
-export const appendExtraArguments = (command: string[], extraArguments: Record<string, unknown>): string[] => { const internalKeys = new Set(["venv_path", "env_vars", "visible_devices", "cuda_visible_devices", "hip_visible_devices", "rocr_visible_devices", "description", "tags", "status", "llama_bin", "ds4_bin", "launch_command", "custom_command", "docker_container", "docker_image", "docker-container", "exllama_command", "exllamav3_command", "exllama-cmd"]);
+export const appendExtraArguments = (command: string[], extraArguments: Record<string, unknown>): string[] => { const internalKeys = new Set(["venv_path", "env_vars", "visible_devices", "cuda_visible_devices", "hip_visible_devices", "rocr_visible_devices", "description", "tags", "status", "llama_bin", "ds4_bin", "ds4_log_path", "ds4_log", "log_path", "launch_command", "custom_command", "docker_container", "docker_image", "docker-container", "exllama_command", "exllamav3_command", "exllama-cmd"]);
   const jsonStringKeys = new Set(["speculative_config", "default_chat_template_kwargs"]);
   for (const [key, value] of Object.entries(extraArguments)) { const normalizedKey = key.replace(/-/g, "_").toLowerCase();
     if (internalKeys.has(normalizedKey)) { continue;
@@ -256,7 +256,7 @@ const resolveDs4Binary = (recipe: Recipe, config: Config): string => { const ove
     } throw new Error(`Invalid ds4_bin: executable "${override}" was not found`);
   } return resolveBinary("ds4-server") ?? "ds4-server";
 };
-const appendDs4Arguments = (command: string[], extraArguments: Record<string, unknown>): string[] => { const internalKeys = new Set(["venv_path", "env_vars", "visible_devices", "cuda_visible_devices", "hip_visible_devices", "rocr_visible_devices", "description", "tags", "status", "llama_bin", "ds4_bin", "docker_container", "docker_image", "docker-container"]);
+const appendDs4Arguments = (command: string[], extraArguments: Record<string, unknown>): string[] => { const internalKeys = new Set(["venv_path", "env_vars", "visible_devices", "cuda_visible_devices", "hip_visible_devices", "rocr_visible_devices", "description", "tags", "status", "llama_bin", "ds4_bin", "ds4_log_path", "ds4_log", "log_path", "docker_container", "docker_image", "docker-container"]);
   for (const [key, value] of Object.entries(extraArguments)) {
     const normalizedKey = key.replace(/-/g, "_").toLowerCase(); if (internalKeys.has(normalizedKey)) {
       continue; }

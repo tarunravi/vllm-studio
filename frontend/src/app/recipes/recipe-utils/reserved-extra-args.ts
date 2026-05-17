@@ -26,6 +26,9 @@ for (const field of EXTRA_ARG_FIELDS) {
   "status",
   "llama_bin",
   "ds4_bin",
+  "ds4_log_path",
+  "ds4_log",
+  "log_path",
   "launch_command",
   "custom_command",
 ].forEach(addReservedKeys);
