@@ -154,7 +154,14 @@ export function mergeActiveAgentSessions(
   const byKey = new Map<string, ActiveAgentSessionSnapshot>();
   const incomingKeys = new Set<string>();
   for (const session of previous) {
-    if (!isHidden(session, prefs)) byKey.set(sessionStorageKey(session), session);
+    if (!isHidden(session, prefs)) {
+      // Retain sessions from the previous broadcast only if they are still
+      // running or starting. Idle sessions that are not in the current
+      // workspace (the 'incoming' set) are dropped from the active list.
+      if (session.status === "running" || session.status === "starting") {
+        byKey.set(sessionStorageKey(session), session);
+      }
+    }
   }
   for (const session of incoming) {
     if (isHidden(session, prefs)) continue;

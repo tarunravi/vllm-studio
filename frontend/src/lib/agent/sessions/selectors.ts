@@ -49,5 +49,10 @@ export function referencedSessionIds(state: WorkspaceState): Set<SessionId> {
   for (const pane of state.panesById.values()) {
     for (const id of pane.sessionIds) ids.add(id);
   }
+  for (const [id, session] of state.sessions.entries()) {
+    if (session.status === "running" || session.status === "starting") {
+      ids.add(id);
+    }
+  }
   return ids;
 }

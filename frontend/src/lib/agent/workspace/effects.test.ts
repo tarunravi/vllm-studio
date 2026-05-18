@@ -176,4 +176,41 @@ describe("runWorkspaceEffect", () => {
       },
     ]);
   });
+
+  it("broadcasts orphaned running sessions", () => {
+    const { deps, events } = makeDeps();
+    const selected = project();
+    const state = hydratedProjectState(createInitialState());
+
+    // Add a running session to the state but don't reference it in any pane.
+    const runningSession = tab({
+      id: "tab-orphaned",
+      piSessionId: "pi-orphaned",
+      status: "running",
+      projectId: selected.id,
+      cwd: selected.path,
+      startedAt: "2026-05-11T00:00:00.000Z",
+    });
+
+    const stateWithOrphan = {
+      ...state,
+      sessions: new Map(state.sessions).set(runningSession.id, runningSession),
+    };
+
+    // Trigger an effect
+    const action: WorkspaceAction = { type: "notifySessionsChanged" };
+    runWorkspaceEffect(action, state, stateWithOrphan, deps);
+
+    const activeSessionEvents = events.filter(
+      (event) => event.type === ACTIVE_AGENT_SESSIONS_EVENT,
+    );
+    expect(activeSessionEvents).toHaveLength(1);
+    const sessions = (activeSessionEvents[0] as CustomEvent).detail.sessions;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(sessions.find((s: any) => s.piSessionId === "pi-orphaned")).toMatchObject({
+      paneId: "",
+      piSessionId: "pi-orphaned",
+      status: "running",
+    });
+  });
 });

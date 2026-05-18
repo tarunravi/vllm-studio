@@ -929,7 +929,10 @@ function SessionNavRow({
           href={href}
           title={label}
           draggable
-          onClick={onRememberTitle}
+          onClick={() => {
+            onRememberTitle?.();
+            onOpen?.();
+          }}
           onDragStart={onDragStart}
           className="flex min-w-0 flex-1 items-center gap-1 pr-5"
           {...openProps}

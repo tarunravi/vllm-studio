@@ -142,4 +142,9 @@ describe("mergeActiveAgentSessions", () => {
     expect(merged.filter((entry) => entry.active)).toHaveLength(1);
     expect(merged.find((entry) => entry.active)).toMatchObject({ piSessionId: "pi-new" });
   });
+
+  it("drops idle sessions that are no longer in the incoming set", () => {
+    const previous = [session({ piSessionId: "pi-idle", status: "idle" })];
+    expect(mergeActiveAgentSessions(previous, [])).toEqual([]);
+  });
 });

@@ -272,12 +272,15 @@ function computeActiveSessionBroadcast(
 ): ActiveAgentSessionSnapshot[] | null {
   if (!state.hydrated) return null;
   const out: ActiveAgentSessionSnapshot[] = [];
+  const seen = new Set<SessionId>();
+
   for (const [paneId, pane] of state.panesById.entries()) {
     for (const id of pane.sessionIds) {
       const tab = state.sessions.get(id);
       if (!tab) continue;
       if (!(Boolean(tab.piSessionId) || tab.messages.length > 0) || tab.status === "loading")
         continue;
+      seen.add(id);
       const selection = selectionFor(id);
       out.push({
         projectId: tab.projectId ?? "",
@@ -296,6 +299,30 @@ function computeActiveSessionBroadcast(
       });
     }
   }
+
+  // Include running/starting sessions that aren't in any pane.
+  for (const [id, tab] of state.sessions.entries()) {
+    if (seen.has(id)) continue;
+    if (tab.status === "running" || tab.status === "starting") {
+      const selection = selectionFor(id);
+      out.push({
+        projectId: tab.projectId ?? "",
+        cwd: tab.cwd ?? "",
+        paneId: "", // Orphaned running sessions have no paneId.
+        tabId: tab.id,
+        piSessionId: tab.piSessionId,
+        modelId: tab.modelId ?? state.selectedModel,
+        title: tab.title,
+        status: tab.status,
+        active: false,
+        startedAt: tab.startedAt,
+        updatedAt: tab.startedAt || new Date().toISOString(),
+        plugins: selection.plugins.length > 0 ? selection.plugins : undefined,
+        skills: selection.skills.length > 0 ? selection.skills : undefined,
+      });
+    }
+  }
+
   return out;
 }
 
