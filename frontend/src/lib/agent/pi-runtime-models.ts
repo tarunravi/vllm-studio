@@ -51,6 +51,7 @@ async function writePiModelsConfig(settings: ApiSettings, models: AgentModel[]):
 export async function refreshPiModels(): Promise<{ models: AgentModel[]; agentDir: string }> {
   const settings = await getApiSettings();
   const models = await fetchModelsFromBackend(settings);
-  const agentDir = await writePiModelsConfig(settings, models);
-  return { models, agentDir };
+  const chatModels = models.filter((model) => !model.imageGeneration);
+  const agentDir = await writePiModelsConfig(settings, chatModels);
+  return { models: chatModels, agentDir };
 }

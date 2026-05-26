@@ -25,6 +25,14 @@ export interface Config {
   exllamav3_command?: string;
   strict_openai_models: boolean;
   providers: ProviderConfig[];
+  image_generation?: ImageGenerationConfig;
+}
+
+export interface ImageGenerationConfig {
+  base_url: string;
+  api_key?: string;
+  model: string;
+  adapter: "openai" | "hidream";
 }
 
 /**
@@ -117,6 +125,10 @@ export const createConfig = (): Config => {
     VLLM_STUDIO_DS4_BIN: z.string().optional(),
     VLLM_STUDIO_EXLLAMAV3_COMMAND: z.string().optional(),
     VLLM_STUDIO_STRICT_OPENAI_MODELS: z.string().optional(),
+    VLLM_STUDIO_IMAGE_GENERATION_BASE_URL: z.string().optional(),
+    VLLM_STUDIO_IMAGE_GENERATION_API_KEY: z.string().optional(),
+    VLLM_STUDIO_IMAGE_GENERATION_MODEL: z.string().optional(),
+    VLLM_STUDIO_IMAGE_GENERATION_ADAPTER: z.enum(["openai", "hidream"]).default("openai"),
   });
 
   const parsed = schema.parse(process.env);
@@ -168,6 +180,16 @@ export const createConfig = (): Config => {
     if (command) {
       config.exllamav3_command = command;
     }
+  }
+  if (parsed.VLLM_STUDIO_IMAGE_GENERATION_BASE_URL?.trim()) {
+    config.image_generation = {
+      base_url: parsed.VLLM_STUDIO_IMAGE_GENERATION_BASE_URL.trim().replace(/\/+$/, ""),
+      model: parsed.VLLM_STUDIO_IMAGE_GENERATION_MODEL?.trim() || "image-generation",
+      adapter: parsed.VLLM_STUDIO_IMAGE_GENERATION_ADAPTER,
+      ...(parsed.VLLM_STUDIO_IMAGE_GENERATION_API_KEY?.trim()
+        ? { api_key: parsed.VLLM_STUDIO_IMAGE_GENERATION_API_KEY.trim() }
+        : {}),
+    };
   }
 
   const persisted = loadPersistedConfig(config.data_dir);

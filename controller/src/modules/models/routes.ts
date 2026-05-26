@@ -16,6 +16,7 @@ interface OpenAIModelInfo {
   owned_by: string;
   active: boolean;
   max_model_len?: number | null;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -114,12 +115,56 @@ export const registerModelsRoutes = (app: Hono, context: AppContext): void => {
       });
     }
 
+    if (context.config.image_generation) {
+      const imageModelId = context.config.image_generation.model;
+      if (!models.some((model) => model.id === imageModelId)) {
+        models.push({
+          id: imageModelId,
+          object: "model",
+          created: now,
+          owned_by: "vllm-studio",
+          active: true,
+          max_model_len: null,
+          metadata: {
+            modality: "image",
+            adapter: context.config.image_generation.adapter,
+            capabilities: {
+              image_generation: true,
+              input: ["text", "image"],
+              output: ["image"],
+            },
+          },
+        });
+      }
+    }
+
     const payload: OpenAIModelList = { object: "list", data: models };
     return ctx.json(payload);
   });
 
   app.get("/v1/models/:modelId", async (ctx) => {
     const modelId = ctx.req.param("modelId");
+    if (context.config.image_generation?.model === modelId) {
+      const payload: OpenAIModelInfo = {
+        id: modelId,
+        object: "model",
+        created: Math.floor(Date.now() / 1000),
+        owned_by: "vllm-studio",
+        active: true,
+        max_model_len: null,
+        metadata: {
+          modality: "image",
+          adapter: context.config.image_generation.adapter,
+          capabilities: {
+            image_generation: true,
+            input: ["text", "image"],
+            output: ["image"],
+          },
+        },
+      };
+      return ctx.json(payload);
+    }
+
     const recipes = context.stores.recipeStore.list();
     let recipe: Recipe | null = null;
     for (const entry of recipes) {

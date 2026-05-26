@@ -252,5 +252,17 @@ export const createOpenApiSpec = (context: AppContext): Record<string, unknown> 
         },
       },
     },
+    "/v1/images/generations": {
+      post: {
+        summary: "Generate images",
+        description:
+          "OpenAI-compatible image generation proxy. Routes to the configured image backend without changing the active text runtime.",
+        responses: {
+          "200": {
+            description: "OpenAI-compatible image generation response",
+          },
+        },
+      },
+    },
   },
 });

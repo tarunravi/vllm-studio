@@ -27,6 +27,7 @@ export interface AgentModel {
   maxTokens: number;
   reasoning: boolean;
   vision: boolean;
+  imageGeneration: boolean;
   active: boolean;
 }
 
@@ -204,6 +205,22 @@ function resolveVision(
   return explicitVision ?? inferVisionSupport(id);
 }
 
+function resolveImageGeneration(
+  model: OpenAIModelListItem,
+  metadata: Record<string, unknown>,
+  capabilities: Record<string, unknown>,
+): boolean {
+  return (
+    (firstBoolean([
+      metadata.imageGeneration,
+      metadata.image_generation,
+      capabilities.imageGeneration,
+      capabilities.image_generation,
+    ]) ?? firstImageInput([metadata.output, metadata.outputs, model.output, model.outputs])) ===
+    true
+  );
+}
+
 export function normalizeOpenAIModel(model: OpenAIModelListItem): AgentModel {
   const metadata = recordFromUnknown(model.metadata);
   const capabilities = recordFromUnknown(metadata.capabilities);
@@ -221,6 +238,7 @@ export function normalizeOpenAIModel(model: OpenAIModelListItem): AgentModel {
     maxTokens,
     reasoning: resolveReasoning(model, metadata, id),
     vision: resolveVision(model, metadata, capabilities, id),
+    imageGeneration: resolveImageGeneration(model, metadata, capabilities),
     active: explicitActive === true,
   };
 }
@@ -240,18 +258,20 @@ export function normalizeOpenAIModels(payload: OpenAIModelsResponse): AgentModel
 }
 
 export function modelsToPiModels(models: AgentModel[]) {
-  return models.map((model) => ({
-    id: model.id,
-    name: model.name,
-    reasoning: model.reasoning,
-    input: model.vision ? ["text", "image"] : ["text"],
-    contextWindow: model.contextWindow,
-    maxTokens: model.maxTokens,
-    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-    compat: {
-      supportsDeveloperRole: false,
-      supportsReasoningEffort: model.reasoning,
-      maxTokensField: "max_tokens",
-    },
-  }));
+  return models
+    .filter((model) => !model.imageGeneration)
+    .map((model) => ({
+      id: model.id,
+      name: model.name,
+      reasoning: model.reasoning,
+      input: model.vision ? ["text", "image"] : ["text"],
+      contextWindow: model.contextWindow,
+      maxTokens: model.maxTokens,
+      cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+      compat: {
+        supportsDeveloperRole: false,
+        supportsReasoningEffort: model.reasoning,
+        maxTokensField: "max_tokens",
+      },
+    }));
 }
