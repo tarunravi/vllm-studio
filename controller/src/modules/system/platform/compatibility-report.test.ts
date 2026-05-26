@@ -96,4 +96,23 @@ describe("compatibility report", () => {
 
     expect(report.checks.some((check) => check.id === "inference.port-in-use")).toBe(true);
   });
+
+  it("does not report missing backends when only DS4 is installed", () => {
+    const report = buildCompatibilityReport({
+      runtime: baseRuntime({
+        backends: {
+          vllm: { installed: false, version: null, python_path: null, binary_path: null },
+          sglang: { installed: false, version: null, python_path: null, binary_path: null },
+          llamacpp: { installed: false, version: null, python_path: null, binary_path: null },
+          ds4: { installed: true, version: null, binary_path: "/usr/local/bin/ds4-server" },
+        },
+      }),
+      inference_port: 8000,
+      inference_port_open: false,
+      inference_process_known: false,
+      gpu_monitoring: { available: false, tool: null },
+    });
+
+    expect(report.checks.some((check) => check.id === "backends.none-installed")).toBe(false);
+  });
 });

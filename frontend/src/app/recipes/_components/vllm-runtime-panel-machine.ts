@@ -260,7 +260,6 @@ export function getRuntimePanelCards(state: RuntimePanelState): {
   const vllmUpgradeConfigured = state.vllmRuntime?.upgrade_command_available;
   const sglangUpgradeConfigured = state.sglangRuntime?.upgrade_command_available;
   const llamaUpgradeConfigured = state.llamacppRuntime?.upgrade_command_available;
-  const ds4UpgradeConfigured = state.ds4Runtime?.upgrade_command_available;
   const cudaUpgradeConfigured = state.cudaRuntime?.upgrade_command_available;
   const rocmUpgradeConfigured = state.rocmRuntime?.upgrade_command_available;
 
@@ -314,11 +313,8 @@ export function getRuntimePanelCards(state: RuntimePanelState): {
       version: state.ds4Runtime?.version ?? null,
       pathLabel: "Binary",
       pathValue: state.ds4Runtime?.binary_path ?? "Not detected",
-      canUpgrade: ds4UpgradeConfigured === true,
-      disabledReason: getDisabledReason(
-        ds4UpgradeConfigured,
-        "Set VLLM_STUDIO_DS4_BIN on the controller or place ds4-server on PATH.",
-      ),
+      canUpgrade: false,
+      disabledReason: "DS4 runtime upgrades are not managed by vLLM Studio.",
       upgrading: state.upgrading === "ds4",
     },
   ];

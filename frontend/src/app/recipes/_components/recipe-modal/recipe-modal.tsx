@@ -77,6 +77,13 @@ export function RecipeModal({
     };
   }, [isLlamacpp, llamaConfigHelp]);
 
+  useLegacyEffect(() => {
+    if (!isDs4) return;
+    if (activeTab === "resources" || activeTab === "performance" || activeTab === "features") {
+      setActiveTab("model");
+    }
+  }, [activeTab, isDs4]);
+
   const getExtraArgValueForKeyLocal = (key: string): unknown => {
     return getExtraArgValueForKey(recipe.extra_args ?? {}, key);
   };
@@ -197,7 +204,7 @@ export function RecipeModal({
           </button>
         </div>
 
-        <RecipeModalTabBar activeTab={activeTab} onSelectTab={setActiveTab} />
+        <RecipeModalTabBar activeTab={activeTab} onSelectTab={setActiveTab} isDs4={isDs4} />
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-5">

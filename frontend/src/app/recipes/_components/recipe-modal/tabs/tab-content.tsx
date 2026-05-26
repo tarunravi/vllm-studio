@@ -70,11 +70,13 @@ export function RecipeModalTabContent({
           recipe={recipe}
           onChange={onChange}
           isLlamacpp={isLlamacpp}
+          isDs4={isDs4}
           getExtraArgValueForKey={getExtraArgValueForKey}
           setExtraArgValueForKey={setExtraArgValueForKey}
         />
       );
     case "resources":
+      if (isDs4) return null;
       return (
         <RecipeModalTabResources
           recipe={recipe}
@@ -85,6 +87,7 @@ export function RecipeModalTabContent({
         />
       );
     case "performance":
+      if (isDs4) return null;
       return (
         <RecipeModalTabPerformance
           recipe={recipe}
@@ -95,6 +98,7 @@ export function RecipeModalTabContent({
         />
       );
     case "features":
+      if (isDs4) return null;
       return (
         <RecipeModalTabFeatures
           recipe={recipe}

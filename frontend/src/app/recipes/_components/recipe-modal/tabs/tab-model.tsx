@@ -9,16 +9,18 @@ export function RecipeModalTabModel({
   recipe,
   onChange,
   isLlamacpp,
+  isDs4,
   getExtraArgValueForKey,
   setExtraArgValueForKey,
 }: {
   recipe: RecipeEditor;
   onChange: (next: RecipeEditor) => void;
   isLlamacpp: boolean;
+  isDs4: boolean;
   getExtraArgValueForKey: (key: string) => unknown;
   setExtraArgValueForKey: (key: string, value: unknown) => void;
 }) {
-  if (isLlamacpp) {
+  if (isLlamacpp || isDs4) {
     return (
       <div className="space-y-5">
         <div className="space-y-4">
@@ -40,24 +42,30 @@ export function RecipeModalTabModel({
                 className="w-full px-3 py-2 bg-(--bg) border border-(--border) rounded-md text-sm focus:outline-none focus:border-(--accent)"
               />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-(--dim) mb-2">Seed</label>
-              <input
-                type="number"
-                value={recipe.seed || ""}
-                onChange={(e) => onChange({ ...recipe, seed: Number(e.target.value) || undefined })}
-                placeholder="Random"
-                className="w-full px-3 py-2 bg-(--bg) border border-(--border) rounded-md text-sm focus:outline-none focus:border-(--accent)"
-              />
-            </div>
+            {!isDs4 && (
+              <div>
+                <label className="block text-xs font-medium text-(--dim) mb-2">Seed</label>
+                <input
+                  type="number"
+                  value={recipe.seed || ""}
+                  onChange={(e) =>
+                    onChange({ ...recipe, seed: Number(e.target.value) || undefined })
+                  }
+                  placeholder="Random"
+                  className="w-full px-3 py-2 bg-(--bg) border border-(--border) rounded-md text-sm focus:outline-none focus:border-(--accent)"
+                />
+              </div>
+            )}
           </div>
         </div>
 
-        <LlamacppOptionsSection
-          tab="model"
-          getValueForKey={getExtraArgValueForKey}
-          setValueForKey={setExtraArgValueForKey}
-        />
+        {!isDs4 && (
+          <LlamacppOptionsSection
+            tab="model"
+            getValueForKey={getExtraArgValueForKey}
+            setValueForKey={setExtraArgValueForKey}
+          />
+        )}
       </div>
     );
   }
