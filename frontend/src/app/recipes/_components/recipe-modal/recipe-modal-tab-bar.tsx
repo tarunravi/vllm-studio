@@ -18,13 +18,19 @@ const tabDefinitions: Array<{ id: RecipeModalTabId; label: string; icon: ReactNo
 export function RecipeModalTabBar({
   activeTab,
   onSelectTab,
+  isDs4,
 }: {
   activeTab: RecipeModalTabId;
   onSelectTab: (tab: RecipeModalTabId) => void;
+  isDs4?: boolean;
 }) {
+  const visibleTabs = isDs4
+    ? tabDefinitions.filter((tab) => !["resources", "performance", "features"].includes(tab.id))
+    : tabDefinitions;
+
   return (
     <div className="flex h-10 shrink-0 gap-1 overflow-x-auto border-b border-(--border) bg-(--bg) px-3 py-1.5">
-      {tabDefinitions.map((tab) => (
+      {visibleTabs.map((tab) => (
         <button
           key={tab.id}
           onClick={() => onSelectTab(tab.id)}

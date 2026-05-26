@@ -158,11 +158,13 @@ export const buildCompatibilityReport = (args: {
     });
   }
 
+  const ds4Installed = runtime.backends.ds4?.installed ?? false;
   const exllamav3Installed = runtime.backends.exllamav3?.installed ?? false;
   if (
     !runtime.backends.vllm.installed &&
     !runtime.backends.sglang.installed &&
     !runtime.backends.llamacpp.installed &&
+    !ds4Installed &&
     !exllamav3Installed
   ) {
     addCheck(checks, {
@@ -171,7 +173,7 @@ export const buildCompatibilityReport = (args: {
       message: "No inference runtime backends appear to be installed.",
       evidence: null,
       suggested_fix:
-        "Install at least one backend runtime (vLLM, SGLang, llama.cpp, or ExLLaMA v3), then restart the controller.",
+        "Install at least one backend runtime (vLLM, SGLang, llama.cpp, DS4, or ExLLaMA v3), then restart the controller.",
     });
   }
 

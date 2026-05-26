@@ -1,7 +1,19 @@
 // CRITICAL
 import type { Recipe, RecipeEditor } from "@/lib/types";
 import { EXTRA_ARG_FIELDS } from "./extra-arg-fields";
-import { getCandidateKeys, getExtraArgValue, parseJsonObject, setExtraArgValue } from "./extra-args";
+import {
+  getCandidateKeys,
+  getExtraArgValue,
+  parseJsonObject,
+  setExtraArgValue,
+} from "./extra-args";
+
+const DS4_EXTRA_ARG_FIELD_ALLOWLIST = new Set<keyof RecipeEditor>([
+  "visible_devices",
+  "cuda_visible_devices",
+  "hip_visible_devices",
+  "rocr_visible_devices",
+]);
 
 export const prepareRecipeForSave = (recipe: RecipeEditor): Recipe => {
   const payload: RecipeEditor = {
@@ -9,6 +21,7 @@ export const prepareRecipeForSave = (recipe: RecipeEditor): Recipe => {
     extra_args: { ...(recipe.extra_args ?? {}) },
   };
   const extraArgs = payload.extra_args ?? {};
+  const isDs4 = payload.backend === "ds4";
 
   if (payload.tensor_parallel_size === undefined && payload.tp !== undefined) {
     payload.tensor_parallel_size = payload.tp;
@@ -19,7 +32,11 @@ export const prepareRecipeForSave = (recipe: RecipeEditor): Recipe => {
 
   for (const field of EXTRA_ARG_FIELDS) {
     const value = payload[field.field];
-    if (value !== undefined) {
+    if (isDs4 && !DS4_EXTRA_ARG_FIELD_ALLOWLIST.has(field.field)) {
+      for (const key of getCandidateKeys(field)) {
+        delete extraArgs[key];
+      }
+    } else if (value !== undefined) {
       setExtraArgValue(extraArgs, field, value);
     }
     delete (payload as unknown as Record<string, unknown>)[field.field];
@@ -32,15 +49,18 @@ export const prepareRecipeForSave = (recipe: RecipeEditor): Recipe => {
     }),
   );
   const updatedKwargs = { ...(existingKwargs ?? {}) };
-  if (payload.thinking_budget !== undefined && payload.thinking_budget !== null) {
+  for (const key of getCandidateKeys({
+    key: "default-chat-template-kwargs",
+    aliases: ["default_chat_template_kwargs"],
+  })) {
+    delete extraArgs[key];
+  }
+  if (!isDs4 && payload.thinking_budget !== undefined && payload.thinking_budget !== null) {
     updatedKwargs["thinking_budget"] = payload.thinking_budget;
   } else {
     delete updatedKwargs["thinking_budget"];
   }
-  for (const key of getCandidateKeys({ key: "default-chat-template-kwargs", aliases: ["default_chat_template_kwargs"] })) {
-    delete extraArgs[key];
-  }
-  if (Object.keys(updatedKwargs).length > 0) {
+  if (!isDs4 && Object.keys(updatedKwargs).length > 0) {
     extraArgs["default_chat_template_kwargs"] = updatedKwargs;
   }
 
@@ -58,4 +78,3 @@ export const prepareRecipeForSave = (recipe: RecipeEditor): Recipe => {
   payload.extra_args = extraArgs;
   return payload;
 };
-

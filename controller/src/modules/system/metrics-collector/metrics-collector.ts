@@ -8,14 +8,25 @@ import { fetchLocal } from "../../../http/local-fetch";
 import { isRecipeRunning } from "../../models/recipes/recipe-matching";
 import type { ProcessInfo, Recipe } from "../../models/types";
 import { METRICS_COLLECT_INTERVAL_MS, METRICS_HTTP_TIMEOUT_MS, METRICS_RUNTIME_SUMMARY_INTERVAL_MS, METRICS_LIFETIME_UPTIME_INCREMENT_SECONDS } from "./configs";
+import { homedir } from "node:os";
 
 const LLAMACPP_LOG_TAIL_LINES = 240;
 const LLAMACPP_TPS_STALE_MS = 15_000;
+const DS4_LOG_TAIL_LINES = 320;
+const DS4_TPS_STALE_MS = 60_000;
 const TOKENS_PER_SECOND_PATTERN = /([0-9]+(?:\.[0-9]+)?)\s*tokens\s+per\s+second/i;
 const PROMPT_EVAL_PATTERN = /prompt eval time\s*=/i;
 const EVAL_PATTERN = /(^|\s)eval time\s*=/i;
+const DS4_PREFILL_PATTERN = /prefill chunk .*?\bavg=([0-9]+(?:\.[0-9]+)?)\s*t\/s/i;
+const DS4_DECODE_PATTERN = /\bdecoding\b.*?\bavg=([0-9]+(?:\.[0-9]+)?)\s*t\/s/i;
 
 interface LlamacppThroughputSample {
+  promptTps: number;
+  generationTps: number;
+  sampleKey: string;
+}
+
+interface ThroughputSample {
   promptTps: number;
   generationTps: number;
   sampleKey: string;
@@ -69,6 +80,67 @@ const parseLlamacppThroughputFromLines = (lines: string[]): LlamacppThroughputSa
   };
 };
 
+const parsePositiveRate = (value: string | undefined): number => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+};
+
+export const parseDs4ThroughputFromLines = (lines: string[]): ThroughputSample | null => {
+  if (lines.length === 0) return null;
+
+  let prefillLine = "";
+  let decodeLine = "";
+  let promptTps = 0;
+  let generationTps = 0;
+
+  for (let index = lines.length - 1; index >= 0; index -= 1) {
+    const line = lines[index] ?? "";
+    if (!decodeLine) {
+      const match = line.match(DS4_DECODE_PATTERN);
+      const value = parsePositiveRate(match?.[1]);
+      if (value > 0) {
+        decodeLine = line;
+        generationTps = value;
+        continue;
+      }
+    }
+    if (!prefillLine) {
+      const match = line.match(DS4_PREFILL_PATTERN);
+      const value = parsePositiveRate(match?.[1]);
+      if (value > 0) {
+        prefillLine = line;
+        promptTps = value;
+      }
+    }
+    if (prefillLine && decodeLine) break;
+  }
+
+  if (promptTps <= 0 && generationTps <= 0) return null;
+  return {
+    promptTps,
+    generationTps,
+    sampleKey: `${prefillLine}::${decodeLine}`,
+  };
+};
+
+const stringExtraArgument = (recipe: Recipe | null, keys: string[]): string | null => {
+  if (!recipe) return null;
+  for (const key of keys) {
+    const value = recipe.extra_args[key] ?? recipe.extra_args[key.replace(/_/g, "-")];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return null;
+};
+
+const userHomeLogPathFromModelPath = (modelPath: string | null | undefined): string | null => {
+  if (!modelPath) return null;
+  const parts = modelPath.split("/").filter(Boolean);
+  if (parts.length >= 2 && (parts[0] === "home" || parts[0] === "Users")) {
+    return `/${parts[0]}/${parts[1]}/ds4-server.log`;
+  }
+  return null;
+};
+
 const findRunningRecipeForProcess = (context: AppContext, current: ProcessInfo): Recipe | null => {
   const recipes = context.stores.recipeStore.list();
   return (
@@ -95,6 +167,35 @@ const scrapeLlamacppThroughput = (context: AppContext, current: ProcessInfo): Ll
   if (!logPath) return null;
   const lines = tailFileLines(logPath, LLAMACPP_LOG_TAIL_LINES);
   return parseLlamacppThroughputFromLines(lines);
+};
+
+const scrapeDs4Throughput = (context: AppContext, current: ProcessInfo): ThroughputSample | null => {
+  const recipe = findRunningRecipeForProcess(context, current);
+  const explicitLogPath =
+    stringExtraArgument(recipe, ["ds4_log_path", "ds4_log", "log_path"]) ??
+    process.env["VLLM_STUDIO_DS4_LOG"] ??
+    null;
+  const recipeLogPath = recipe ? resolveExistingLogPath(context.config.data_dir, recipe.id) : null;
+  const candidatePaths = [
+    explicitLogPath,
+    recipeLogPath,
+    userHomeLogPathFromModelPath(current.model_path),
+    `${homedir()}/ds4-server.log`,
+    "/tmp/ds4-server.log",
+  ].filter((path): path is string => Boolean(path));
+
+  for (const logPath of candidatePaths) {
+    const lines = tailFileLines(logPath, DS4_LOG_TAIL_LINES);
+    const sample = parseDs4ThroughputFromLines(lines);
+    if (sample) return sample;
+  }
+
+  const entries = listLogFiles(context.config.data_dir).filter((entry) => entry.sessionId !== "controller");
+  for (const entry of entries) {
+    const sample = parseDs4ThroughputFromLines(tailFileLines(entry.path, DS4_LOG_TAIL_LINES));
+    if (sample) return sample;
+  }
+  return null;
 };
 
 const positiveOrUndefined = (value: unknown): number | undefined => {
@@ -159,6 +260,10 @@ export const startMetricsCollector = (context: AppContext): (() => void) => {
   let lastLlamacppSampleKey = "";
   let lastLlamacppPromptThroughput = 0;
   let lastLlamacppGenerationThroughput = 0;
+  let lastDs4SampleAt = 0;
+  let lastDs4SampleKey = "";
+  let lastDs4PromptThroughput = 0;
+  let lastDs4GenerationThroughput = 0;
   let sessionModelId: string | null = null;
   let sessionPeaks: SessionPeaks = emptyPeaks();
   let metricsUnavailableUntil = 0;
@@ -362,6 +467,28 @@ export const startMetricsCollector = (context: AppContext): (() => void) => {
           const isFresh = Date.now() - lastLlamacppSampleAt <= LLAMACPP_TPS_STALE_MS;
           promptThroughput = isFresh ? lastLlamacppPromptThroughput : 0;
           generationThroughput = isFresh ? lastLlamacppGenerationThroughput : 0;
+        } else if (current.backend === "ds4") {
+          // DS4 does not expose Prometheus metrics; parse its native throughput log lines.
+          lastVllmMetrics = {};
+          lastMetricsTime = 0;
+          const sample = scrapeDs4Throughput(context, current);
+          const isNewSample = Boolean(sample && sample.sampleKey !== lastDs4SampleKey);
+          if (sample && isNewSample) {
+            lastDs4SampleAt = Date.now();
+            lastDs4SampleKey = sample.sampleKey;
+            if (sample.promptTps > 0) {
+              lastDs4PromptThroughput = sample.promptTps;
+            }
+            if (sample.generationTps > 0) {
+              lastDs4GenerationThroughput = sample.generationTps;
+            }
+
+            context.stores.peakMetricsStore.updateIfBetter(modelId, sample.promptTps > 0 ? sample.promptTps : undefined, sample.generationTps > 0 ? sample.generationTps : undefined, undefined);
+          }
+
+          const isFresh = Date.now() - lastDs4SampleAt <= DS4_TPS_STALE_MS;
+          promptThroughput = isFresh ? lastDs4PromptThroughput : 0;
+          generationThroughput = isFresh ? lastDs4GenerationThroughput : 0;
         } else {
           // Unknown/non-vLLM backend: keep lifetime/power metrics and avoid stale backend-specific values.
           lastVllmMetrics = {};
@@ -370,6 +497,10 @@ export const startMetricsCollector = (context: AppContext): (() => void) => {
           lastLlamacppSampleKey = "";
           lastLlamacppPromptThroughput = 0;
           lastLlamacppGenerationThroughput = 0;
+          lastDs4SampleAt = 0;
+          lastDs4SampleKey = "";
+          lastDs4PromptThroughput = 0;
+          lastDs4GenerationThroughput = 0;
         }
 
         bumpPeak(sessionPeaks, "prompt_throughput", promptThroughput);
